@@ -1,0 +1,29 @@
+{{- $root := . }}
+{{- range .Values.workers }}
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: {{ include "machinedeployment.name" $root }}-{{ .name }}
+spec:
+  clusterName: {{ include "cluster.name" $root }}
+  replicas: {{ .number }}
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: {{ include "cluster.name" $root }}
+  template:
+    metadata:
+      labels:
+        cluster.x-k8s.io/cluster-name: {{ include "cluster.name" $root }}
+    spec:
+      version: {{ regexReplaceAll "\\+k0s.+$" $root.Values.k0s.version "" }}
+      clusterName: {{ include "cluster.name" $root }}
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: K0sWorkerConfigTemplate
+          name: {{ include "k0sworkerconfigtemplate.name" $root }}
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+        kind: AWSMachineTemplate
+        name: {{ include "awsmachinetemplate.name" $root }}-{{ .name }}
+{{- end }}
